@@ -1,0 +1,18 @@
+[package]
+name = "practice"
+version = "0.1.0"
+authors = ["komalklr <komalklr@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+curve25519-dalek = { version = "1.0.3", features = ["serde"] }
+merlin = "1.1"
+rand = "0.6"
+
+[dependencies.bulletproofs]
+#path = "../bulletproofs"
+git = "https://github.com/komalklr/bulletproofs.git"
+branch = "master"
+features = ["yoloproofs", "avx2_backend"]

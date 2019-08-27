@@ -1,0 +1,2 @@
+cargo:rustc-env=TYPENUM_BUILD_OP=/home/komal/projects/practice/target/debug/build/typenum-bc2818d0fadecced/out/consts.rs
+cargo:rustc-env=TYPENUM_BUILD_CONSTS=/home/komal/projects/practice/target/debug/build/typenum-bc2818d0fadecced/out/op.rs
