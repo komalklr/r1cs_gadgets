@@ -7,7 +7,7 @@ use bulletproofs::r1cs::LinearCombination;
 #[derive(Copy, Clone, Debug)]
 pub struct AllocatedQuantity {
     pub variable: Variable,
-    pub assignment: Option<u64>
+    pub assignment: Option<i64>
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -22,28 +22,38 @@ pub fn positive_no_gadget<CS: ConstraintSystem>(
     v: AllocatedQuantity,
     n: usize
     ,) -> Result<(), R1CSError> {
-    let mut constraint_v = vec![(v.variable, -Scalar::one())];
-    let mut exp_2 = Scalar::one();
-    for i in 0..n {
-        // Create low-level variables and add them to constraints
+    // let mut constraint_v = vec![(v.variable, -Scalar::one())];
+    // let mut exp_2 = Scalar::one();
+    // for i in 0..n {
+    //     // Create low-level variables and add them to constraints
 
-        let (a, b, o) = cs.allocate_multiplier(v.assignment.map(|q| {
-            let bit: u64 = (q >> i) & 1;
+    //     let (a, b, o) = cs.allocate_multiplier(v.assignment.map(|q| {
+    //         let bit: u64 = (q >> i) & 1;
+    //         ((1 - bit).into(), bit.into())
+    //     }))?;
+
+    //     // Enforce a * b = 0, so one of (a,b) is zero
+    //     cs.constrain(o.into());
+
+    //     // Enforce that a = 1 - b, so they both are 1 or 0.
+    //     cs.constrain(a + (b - 1u64));
+
+    //     constraint_v.push((b, exp_2)  );
+    //     exp_2 = exp_2 + exp_2;
+    // }
+    let (a, b, o) = cs.allocate_multiplier(v.assignment.map(|q| {
+            let bit: u64 = (q >> 63) & 1;
             ((1 - bit).into(), bit.into())
         }))?;
+    // let bit:u64 = (v.assignment>>63) & 1;
+    // let s = Scalar::from(bit);
+    // let lc = LinearCombination::from(s);
+    cs.constrain(o.into());
+    cs.constrain(a + (b - 1u64));
 
-        // Enforce a * b = 0, so one of (a,b) is zero
-        cs.constrain(o.into());
-
-        // Enforce that a = 1 - b, so they both are 1 or 0.
-        cs.constrain(a + (b - 1u64));
-
-        constraint_v.push((b, exp_2)  );
-        exp_2 = exp_2 + exp_2;
-    }
 
     // Enforce that -v + Sum(b_i * 2^i, i = 0..n-1) = 0 => Sum(b_i * 2^i, i = 0..n-1) = v
-    cs.constrain(constraint_v.iter().collect());
+   // cs.constrain(constraint_v.iter().collect());
 
     Ok(())
 }

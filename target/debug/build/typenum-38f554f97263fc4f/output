@@ -1,0 +1,2 @@
+cargo:rustc-env=TYPENUM_BUILD_OP=/home/komal/projects/zkp/r1cs_gadgets/target/debug/build/typenum-38f554f97263fc4f/out/consts.rs
+cargo:rustc-env=TYPENUM_BUILD_CONSTS=/home/komal/projects/zkp/r1cs_gadgets/target/debug/build/typenum-38f554f97263fc4f/out/op.rs
