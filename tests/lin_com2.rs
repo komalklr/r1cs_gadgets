@@ -50,7 +50,6 @@ fn example_gadget<CS: ConstraintSystem>(cs: &mut CS,a: LinearCombination,c: Line
     vecl[1]=c.clone();
     vecl[2]=a;
     let mut k:u64 = 1u64;
-    let mut km:u64 = 1u64;
     let mut p:u64 = 0;
     for result in rdr.deserialize() 
     {   
@@ -58,46 +57,48 @@ fn example_gadget<CS: ConstraintSystem>(cs: &mut CS,a: LinearCombination,c: Line
         k=k+1;
         continue;
         }
-       let record: Record = result?;
-       println!("{}yes ",km);
-        km=km+1;
+        let record: Record = result?;
         if record.coeff.is_none(){
             //assert_eq!(record.index.expect("Constraint Error"), "Constraint 1:");
         }
-        else{
-            match &record.index.clone().unwrap()[..] {
-                    "A:" => {flag=true;vi=0},
-                    "B:" => {flag=true;vi=1},
-                    "C:" => {flag=true;vi=2},
-                     _ => flag=false,
-                    }
-            if flag==false{
+        else
+        {
+            match &record.index.clone().unwrap()[..] 
+            {
+                "A:" => {flag=true;vi=0},
+                "B:" => {flag=true;vi=1},
+                "C:" => {flag=true;vi=2},
+                _ => flag=false,
+            }
+            if flag==false
+            {
                 let index:usize = (record.index.unwrap()).parse::<u64>().unwrap() as usize;
-                if p>0 {
-            p=p-1;
-            if vi==2{
-                    let (_, _, sym_1) = cs.multiply(vecABC[0].clone(),vecABC[1].clone());
-                    vecl[index] = LinearCombination::from(sym_1);
+                if p>0
+                {
+                    p=p-1;
+                    if vi==2
+                    {
+                        let (_, _, sym_1) = cs.multiply(vecABC[0].clone(),vecABC[1].clone());
+                        vecl[index] = LinearCombination::from(sym_1);
                     }
-            else    {
-                    lc = lc + (vecl[index].clone())*(Scalar::from(record.coeff.unwrap()));
-                    if p==0{
+                    else
+                    {
+                        lc = lc + (vecl[index].clone())*(Scalar::from(record.coeff.unwrap()));
+                        if p==0
+                        {
                             vecABC[vi]=lc.clone();
-                            }
+                        }
                     }
                 }
             }
-            else{
+            else
+            {
                 p = record.coeff.unwrap();
                 lc=LinearCombination::from(Scalar::zero());
             }
-            
         }
     }
     cs.constrain(vecl[1].clone()-c);
-
-        
-   
     // let lc1:LinearCombination = LinearCombination::from(Scalar::one());
 
     // let (_, _, sym_1) = cs.multiply(a.clone(), a.clone());
@@ -141,7 +142,7 @@ fn example_gadget_helper(a: u64,c: u64,) -> Result<(), R1CSError> {
 }
 #[test]
 fn example_gadget_test() {
-    assert!(example_gadget_helper(7, 35).is_ok());
+    assert!(example_gadget_helper(3, 35).is_ok());
    // assert!(example_gadget_helper(35,  35).is_err());
 }
 fn example_gadget_roundtrip_serialization_helper(a: u64,
