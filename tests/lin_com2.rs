@@ -38,26 +38,42 @@ struct Record {
 //     }
 //     Ok(())
 // }
-fn example_gadget<CS: ConstraintSystem>(cs: &mut CS,a: LinearCombination,c: LinearCombination,) -> Result<(), Box<::std::error::Error>>{
+fn example_gadget<CS: ConstraintSystem>(cs: &mut CS,a: &mut [LinearCombination],c:&mut [LinearCombination],) -> Result<(), Box<::std::error::Error>>{
     let file = File::open("constraint.csv").expect("Couldn't open input");
     let mut rdr = csv::Reader::from_reader(file);
     let lcs1:LinearCombination = LinearCombination::from(Scalar::one());
     let mut lc:LinearCombination = LinearCombination::from(Scalar::zero());
-    let mut vecl = vec![lcs1.clone(); 10];
+    let mut vecl = Vec::new();
+    vecl.push(lcs1.clone());
     let mut vecABC = vec![lcs1; 2];
     let mut vi:usize = 0;
     let mut flag:bool;
-    vecl[1]=c.clone();
-    vecl[2]=a;
+   // let mut ind:usize = 1;
+    for i in a{
+        vecl.push(i);
+        //vec_secret.push(i.into());
+    }
+    for i in c{
+        vecl.push(i);
+        //vec_secret.push(i.into());
+    }
     let mut k:u64 = 1u64;
     let mut p:u64 = 0;
     for result in rdr.deserialize() 
     {   
-        if k<=3{
-        k=k+1;
-        continue;
-        }
         let record: Record = result?;
+        if k==1{
+           let prim_input_size = (record.index.unwrap()).parse::<u64>().unwrap() as usize;
+           k=k+1;
+        }
+        else if k==2{
+           let aux_input_size = (record.index.unwrap()).parse::<u64>().unwrap() as usize;
+           k=k+1;
+        }
+        else if k==3{
+            let no_of_cons = (record.index.unwrap()).parse::<u64>().unwrap() as usize;
+            k=k+1;
+        }
         if record.coeff.is_none(){
             //assert_eq!(record.index.expect("Constraint Error"), "Constraint 1:");
         }
@@ -116,23 +132,39 @@ fn example_gadget<CS: ConstraintSystem>(cs: &mut CS,a: LinearCombination,c: Line
     Ok(())
 }  
 
-fn example_gadget_proof(pc_gens: &PedersenGens,bp_gens: &BulletproofGens,x: u64,c: u64,) -> Result<(R1CSProof, Vec<CompressedRistretto>), R1CSError> {
+fn example_gadget_proof(pc_gens: &PedersenGens,bp_gens: &BulletproofGens,x:&mut [u64],c: &mut [u64],) -> Result<(R1CSProof, Vec<CompressedRistretto>), R1CSError> {
     let mut transcript = Transcript::new(b"R1CSExampleGadget");
     let mut prover = Prover::new(pc_gens, &mut transcript);
-    let (commitments, vars): (Vec<_>, Vec<_>) = [x].into_iter().map(|x| prover.commit(Scalar::from(*x), Scalar::random(&mut thread_rng()))).unzip();
-    example_gadget(&mut prover,vars[0].into(),Scalar::from(c).into(),);
+    let (commitments, vars): (Vec<_>, Vec<_>) = x.into_iter().map(|x| prover.commit(Scalar::from(*x), Scalar::random(&mut thread_rng()))).unzip();
+    let mut vec_secret = Vec::new();
+    let mut vec_public = Vec::new();
+    for i in vars{
+        vec_secret.push(i.into());
+    }
+    for i in c{
+        vec_public.push(Scalar::from(i).into());
+    }
+    example_gadget(&mut prover,vec_secret,vec_public);
     let proof = prover.prove(bp_gens)?;
     Ok((proof, commitments))
 }
-fn example_gadget_verify(pc_gens: &PedersenGens,bp_gens: &BulletproofGens,c: u64,proof: R1CSProof,commitments: Vec<CompressedRistretto>,
+fn example_gadget_verify(pc_gens: &PedersenGens,bp_gens: &BulletproofGens,c: &mut [u64],proof: R1CSProof,commitments: Vec<CompressedRistretto>,
 ) -> Result<(), R1CSError> {
     let mut transcript = Transcript::new(b"R1CSExampleGadget");
     let mut verifier = Verifier::new(&mut transcript);
     let vars: Vec<_> = commitments.iter().map(|V| verifier.commit(*V)).collect();
-    example_gadget(&mut verifier,vars[0].into(),Scalar::from(c).into(),);
+    let mut vec_secret = Vec::new();
+    let mut vec_public = Vec::new();
+    for i in vars{
+        vec_secret.push(i.into());
+    }
+    for i in c{
+        vec_public.push(Scalar::from(i).into());
+    }
+    example_gadget(&mut verifier,vec_secret,vec_public,);
     verifier.verify(&proof, &pc_gens, &bp_gens).map_err(|_| R1CSError::VerificationError)
 }
-fn example_gadget_helper(a: u64,c: u64,) -> Result<(), R1CSError> {
+fn example_gadget_helper(a: &mut [u64],c: &mut [u64],) -> Result<(), R1CSError> {
     let pc_gens = PedersenGens::default();
     let bp_gens = BulletproofGens::new(128, 1);
     println!("ggggg1");
@@ -142,11 +174,14 @@ fn example_gadget_helper(a: u64,c: u64,) -> Result<(), R1CSError> {
 }
 #[test]
 fn example_gadget_test() {
-    assert!(example_gadget_helper(3, 35).is_ok());
+    let mut vec_secret = Vec::new();
+    let mut vec_public = Vec::new();
+    vec_secret.push(3);
+    vec_public.push(35);
+    assert!(example_gadget_helper(vec_secret, vec_public).is_ok());
    // assert!(example_gadget_helper(35,  35).is_err());
 }
-fn example_gadget_roundtrip_serialization_helper(a: u64,
-    c: u64,
+fn example_gadget_roundtrip_serialization_helper(a: u64,c: u64,
 ) -> Result<(), R1CSError> {
     // Common
     let pc_gens = PedersenGens::default();
